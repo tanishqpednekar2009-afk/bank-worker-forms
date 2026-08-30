@@ -35,9 +35,11 @@ export function BankForm({ bank }: BankFormProps) {
 
     const validationErrors = validateBankForm(bank, values);
     setErrors(validationErrors);
+
     if (!isValid(validationErrors)) return;
 
     setSubmitting(true);
+
     try {
       let serialNo: number | null = null;
 
@@ -45,32 +47,53 @@ export function BankForm({ bank }: BankFormProps) {
         const { data, error } = await supabase.rpc("next_serial", {
           bank_name: bank.slug,
         });
-        if (error) throw error;
+
+        if (error) {
+          throw new Error(
+            `Serial number error: ${error.message}${
+              error.details ? ` | Details: ${error.details}` : ""
+            }${error.hint ? ` | Hint: ${error.hint}` : ""}`
+          );
+        }
+
         serialNo = data as number;
       }
 
-      // Build the jsonb payload from only the fields the worker actually
-      // entered (visible fields), keyed by FieldConfig.key.
       const payload: Record<string, string> = {};
+
       for (const field of visibleFields) {
         payload[field.key] = (values[field.key] ?? "").trim();
       }
 
-      const { error: insertError } = await supabase.from("submissions").insert({
-        bank: bank.slug,
-        serial_no: serialNo,
-        data: payload,
-      });
+      const { error: insertError } = await supabase
+        .from("submissions")
+        .insert({
+          bank: bank.slug,
+          serial_no: serialNo,
+          data: payload,
+        });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        throw new Error(
+          `Database insert error: ${insertError.message}${
+            insertError.details ? ` | Details: ${insertError.details}` : ""
+          }${insertError.hint ? ` | Hint: ${insertError.hint}` : ""}${
+            insertError.code ? ` | Code: ${insertError.code}` : ""
+          }`
+        );
+      }
 
       setResult({ serialNo });
-    } catch (err) {
-      setSubmitError(
-        err instanceof Error
-          ? `Could not submit: ${err.message}`
-          : "Could not submit. Please try again."
-      );
+    } catch (err: unknown) {
+      console.error("SUBMISSION FAILED:", err);
+
+      if (err instanceof Error) {
+        setSubmitError(err.message);
+      } else {
+        setSubmitError(
+          `Submission failed: ${JSON.stringify(err, null, 2)}`
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -102,7 +125,10 @@ export function BankForm({ bank }: BankFormProps) {
       ))}
 
       {submitError && (
-        <p className="mb-4 text-base text-red-600">{submitError}</p>
+        <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+          <p className="font-semibold">Submission failed</p>
+          <p className="mt-1 break-words">{submitError}</p>
+        </div>
       )}
 
       <button
