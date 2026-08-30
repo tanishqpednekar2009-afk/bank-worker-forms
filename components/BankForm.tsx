@@ -11,6 +11,9 @@ interface BankFormProps {
   bank: BankConfig;
 }
 
+const GOOGLE_SHEETS_WEBHOOK =
+  "https://script.google.com/macros/s/AKfycbwD_zhf9YyollWn_ZsFMRRk3JPnjdjjDUgKYcmyG4s8UfXX8jU65Q4Wp19yxqp1ED5Xcg/exec";
+
 export function BankForm({ bank }: BankFormProps) {
   const [values, setValues] = useState<FormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,6 +68,7 @@ export function BankForm({ bank }: BankFormProps) {
         payload[field.key] = (values[field.key] ?? "").trim();
       }
 
+      // 1. Save permanently to Supabase first.
       const { error: insertError } = await supabase
         .from("submissions")
         .insert({
@@ -83,6 +87,36 @@ export function BankForm({ bank }: BankFormProps) {
         );
       }
 
+      // 2. Add the same submission to the correct live Google Sheet.
+      // Google Sheets failure does NOT undo the successful database save.
+      try {
+        const sheetResponse = await fetch(GOOGLE_SHEETS_WEBHOOK, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({
+            bank: bank.slug,
+            serial_no: serialNo,
+            data: payload,
+          }),
+        });
+
+        if (!sheetResponse.ok) {
+          console.error(
+            "Google Sheets sync failed:",
+            sheetResponse.status,
+            sheetResponse.statusText
+          );
+        } else {
+          const sheetResult = await sheetResponse.text();
+          console.log("Google Sheets sync:", sheetResult);
+        }
+      } catch (sheetError) {
+        console.error("Google Sheets sync failed:", sheetError);
+      }
+
+      // 3. Show success to the worker.
       setResult({ serialNo });
     } catch (err: unknown) {
       console.error("SUBMISSION FAILED:", err);
