@@ -12,7 +12,7 @@ interface BankFormProps {
 }
 
 const GOOGLE_SHEETS_WEBHOOK =
-  "https://script.google.com/macros/s/AKfycbwD_zhf9YyollWn_ZsFMRRk3JPnjdjjDUgKYcmyG4s8UfXX8jU65Q4Wp19yxqp1ED5Xcg/exec";
+  "https://script.google.com/macros/s/AKfycbw_qT1VcPCK1TVtP1mplqIm-6VvazjnjeEGaPaONsZH3Mnx6f1gsV6Ru6TLGI8Fpnxz0A/exec";
 
 export function BankForm({ bank }: BankFormProps) {
   const [values, setValues] = useState<FormValues>({});
@@ -68,7 +68,7 @@ export function BankForm({ bank }: BankFormProps) {
         payload[field.key] = (values[field.key] ?? "").trim();
       }
 
-      // 1. Save permanently to Supabase first.
+      // 1. Save permanently to Supabase.
       const { error: insertError } = await supabase
         .from("submissions")
         .insert({
@@ -87,8 +87,7 @@ export function BankForm({ bank }: BankFormProps) {
         );
       }
 
-      // 2. Add the same submission to the correct live Google Sheet.
-      // Google Sheets failure does NOT undo the successful database save.
+      // 2. Sync to the correct Google Sheet.
       try {
         const sheetResponse = await fetch(GOOGLE_SHEETS_WEBHOOK, {
           method: "POST",
@@ -116,7 +115,7 @@ export function BankForm({ bank }: BankFormProps) {
         console.error("Google Sheets sync failed:", sheetError);
       }
 
-      // 3. Show success to the worker.
+      // 3. Show success.
       setResult({ serialNo });
     } catch (err: unknown) {
       console.error("SUBMISSION FAILED:", err);
