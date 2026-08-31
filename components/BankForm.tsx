@@ -88,34 +88,48 @@ export function BankForm({ bank }: BankFormProps) {
       }
 
       // 2. Sync to the correct Google Sheet.
-      try {
-        const sheetResponse = await fetch(GOOGLE_SHEETS_WEBHOOK, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8",
-          },
-          body: JSON.stringify({
-            bank: bank.slug,
-            serial_no: serialNo,
-            data: payload,
-          }),
-        });
+      const sheetResponse = await fetch(GOOGLE_SHEETS_WEBHOOK, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify({
+          bank: bank.slug,
+          serial_no: serialNo,
+          data: payload,
+        }),
+      });
 
-        if (!sheetResponse.ok) {
-          console.error(
-            "Google Sheets sync failed:",
-            sheetResponse.status,
-            sheetResponse.statusText
-          );
-        } else {
-          const sheetResult = await sheetResponse.text();
-          console.log("Google Sheets sync:", sheetResult);
-        }
-      } catch (sheetError) {
-        console.error("Google Sheets sync failed:", sheetError);
+      const sheetResult = await sheetResponse.text();
+
+      if (!sheetResponse.ok) {
+        throw new Error(
+          `Google Sheets HTTP error: ${sheetResponse.status} ${sheetResponse.statusText}`
+        );
       }
 
-      // 3. Show success.
+      let sheetData: {
+        success?: boolean;
+        error?: string;
+      };
+
+      try {
+        sheetData = JSON.parse(sheetResult);
+      } catch {
+        throw new Error(
+          `Google Sheets returned invalid response: ${sheetResult}`
+        );
+      }
+
+      if (sheetData.success === false) {
+        throw new Error(
+          `Google Sheets error: ${sheetData.error || "Unknown error"}`
+        );
+      }
+
+      console.log("Google Sheets sync:", sheetData);
+
+      // 3. Show success only after both Supabase and Google Sheets succeed.
       setResult({ serialNo });
     } catch (err: unknown) {
       console.error("SUBMISSION FAILED:", err);
