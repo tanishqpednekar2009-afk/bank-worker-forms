@@ -12,7 +12,7 @@ interface BankFormProps {
 }
 
 const GOOGLE_SHEETS_WEBHOOK =
-  "https://script.google.com/macros/s/AKfycbw_qT1VcPCK1TVtP1mplqIm-6VvazjnjeEGaPaONsZH3Mnx6f1gsV6Ru6TLGI8Fpnxz0A/exec";
+  "https://script.google.com/macros/s/AKfycbzCZh9QBjtQkFa82CPWkbbS0aZLRNRGZKGIe33fC46p82H2IDVamdXo7_oLecm7JWUGbg/exec";
 
 export function BankForm({ bank }: BankFormProps) {
   const [values, setValues] = useState<FormValues>({});
