@@ -5,6 +5,12 @@ export const hdfcFix: BankConfig = {
   displayName: "HDFC Fix",
   fields: [
     {
+      key: "date",
+      label: "Date",
+      type: "date",
+      required: true,
+    },
+    {
       key: "name",
       label: "Name",
       type: "text",
