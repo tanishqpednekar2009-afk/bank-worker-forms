@@ -13,7 +13,14 @@ export interface FieldConfig {
 
 export interface BankConfig {
   /** Slug used in routes and the submissions.bank column. */
-  slug: "hdfc" | "jana" | "hdb" | "kotak" | "hdfc_fix" | "jana_fix";
+  slug:
+    | "hdfc"
+    | "jana"
+    | "hdb"
+    | "kotak"
+    | "hdfc_fix"
+    | "jana_fix"
+    | "hdb_not_done";
   displayName: string;
   fields: FieldConfig[];
 }

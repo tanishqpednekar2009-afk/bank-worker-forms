@@ -5,6 +5,7 @@ import { hdb } from "./hdb";
 import { kotak } from "./kotak";
 import { hdfcFix } from "./hdfc-fix";
 import { janaFix } from "./jana-fix";
+import { hdbNotDone } from "./hdb-not-done";
 
 export const bankRegistry: Record<BankSlug, BankConfig> = {
   hdfc,
@@ -13,6 +14,7 @@ export const bankRegistry: Record<BankSlug, BankConfig> = {
   kotak,
   hdfc_fix: hdfcFix,
   jana_fix: janaFix,
+  hdb_not_done: hdbNotDone,
 };
 
 export const bankSlugs: BankSlug[] = [
@@ -22,6 +24,7 @@ export const bankSlugs: BankSlug[] = [
   "kotak",
   "hdfc_fix",
   "jana_fix",
+  "hdb_not_done",
 ];
 
 export function getBankConfig(slug: string): BankConfig | undefined {
